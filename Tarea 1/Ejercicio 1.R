@@ -25,7 +25,8 @@ vol_cc_quote = rep(0,13)
 vol_cc_LR = rep(0,13)
 vol_tot_real = rep(0,13)
 tabla1 = matrix(nrow=30,ncol=3)
-tabla2 = matrix(nrow=30,ncol=18)
+tabla2 = matrix(nrow=30,ncol=9)
+tabla2.2 = matrix(nrow=9,ncol=2)
 
 for(i in 1:nrow(stock_201)){
   
@@ -194,26 +195,37 @@ for (i in 1:30){
   tabla1[i,3] =  (prec_stock_1[i,3] + prec_stock_2[i,3] + prec_stock_3[i,3] + prec_stock_101[i,3] + prec_stock_102[i,3] 
                   + prec_stock_103[i,3] + prec_stock_201[i,3] + prec_stock_202[i,3] + prec_stock_203[i,3])/9
   
-  #Cálculo de la precisión media diaría por activo y su desviación estandard (Tabla II)
+  #Cálculo de la precisión media diaría por activo y su desviación típica (Tabla II)
+  #Primero se calculan las medias de cada día
   tabla2[i,1] = mean(prec_stock_1[i,])
-  tabla2[i,2] = sd(prec_stock_1[i,])
-  tabla2[i,3] = mean(prec_stock_2[i,])
-  tabla2[i,4] = sd(prec_stock_2[i,])
-  tabla2[i,5] = mean(prec_stock_3[i,])
-  tabla2[i,6] = sd(prec_stock_3[i,])
-  tabla2[i,7] = mean(prec_stock_101[i,])
-  tabla2[i,8] = sd(prec_stock_101[i,])
-  tabla2[i,9] = mean(prec_stock_102[i,])
-  tabla2[i,10] = sd(prec_stock_102[i,])
-  tabla2[i,11] = mean(prec_stock_103[i,])
-  tabla2[i,12] = sd(prec_stock_103[i,])
-  tabla2[i,13] = mean(prec_stock_201[i,])
-  tabla2[i,14] = sd(prec_stock_201[i,])
-  tabla2[i,15] = mean(prec_stock_202[i,])
-  tabla2[i,16] = sd(prec_stock_202[i,])
-  tabla2[i,17] = mean(prec_stock_203[i,])
-  tabla2[i,18] = sd(prec_stock_203[i,])
+  tabla2[i,2] = mean(prec_stock_2[i,])
+  tabla2[i,3] = mean(prec_stock_3[i,])
+  tabla2[i,4] = mean(prec_stock_101[i,])
+  tabla2[i,5] = mean(prec_stock_102[i,])
+  tabla2[i,6] = mean(prec_stock_103[i,])
+  tabla2[i,7] = mean(prec_stock_201[i,])
+  tabla2[i,8] = mean(prec_stock_202[i,])
+  tabla2[i,9] = mean(prec_stock_203[i,])
 }
+  #En segundo lugar se calcula la medía por activo y su desviación típica
+  tabla2.2[1,1] = mean(na.omit(tabla2[,1]))
+  tabla2.2[1,2] = sd(na.omit(tabla2[,1]))
+  tabla2.2[2,1] = mean(na.omit(tabla2[,2]))
+  tabla2.2[2,2] = sd(na.omit(tabla2[,2]))
+  tabla2.2[3,1] = mean(na.omit(tabla2[,3]))
+  tabla2.2[3,2] = sd(na.omit(tabla2[,3]))
+  tabla2.2[4,1] = mean(na.omit(tabla2[,4]))
+  tabla2.2[4,2] = sd(na.omit(tabla2[,4]))
+  tabla2.2[5,1] = mean(na.omit(tabla2[,5]))
+  tabla2.2[5,2] = sd(na.omit(tabla2[,5]))
+  tabla2.2[6,1] = mean(na.omit(tabla2[,6]))
+  tabla2.2[6,2] = sd(na.omit(tabla2[,6]))
+  tabla2.2[7,1] = mean(na.omit(tabla2[,7]))
+  tabla2.2[7,2] = sd(na.omit(tabla2[,7]))
+  tabla2.2[8,1] = mean(na.omit(tabla2[,8]))
+  tabla2.2[8,2] = sd(na.omit(tabla2[,8]))
+  tabla2.2[9,1] = mean(na.omit(tabla2[,9]))
+  tabla2.2[9,2] = sd(na.omit(tabla2[,9]))
 
 #Creación de la tabla III juntando en una matrix los valores de precisión agregara anteriormente calculados.
 tabla3 = matrix(rbind(agr_prec_stock_1, agr_prec_stock_2, agr_prec_stock_3, agr_prec_stock_101, agr_prec_stock_102, agr_prec_stock_103, 
@@ -221,9 +233,8 @@ tabla3 = matrix(rbind(agr_prec_stock_1, agr_prec_stock_2, agr_prec_stock_3, agr_
 
 
 dimnames(tabla1) = list(c(),c("tick_rule", "quote_rule", "Lee y Ready"))
-dimnames(tabla2) = list(c(),c("mean_stock_1", "sd_stock_1","mean_stock_2", "sd_stock_2","mean_stock_3", "sd_stock_3",
-                              "mean_stock_101", "sd_stock_101","mean_stock_102", "sd_stock_102","mean_stock_103", "sd_stock_103",
-                              "mean_stock_201", "sd_stock_201","mean_stock_202", "sd_stock_202","mean_stock_203", "sd_stock_203"))
+dimnames(tabla2.2) = list(c("stock_1", "stock_2", "stock_3", "stock_101", "stock_102", "stock_103", 
+                                                     "stock_201", "stock_202", "stock_203"), c("Media", "Desv. Típica"))
 dimnames(tabla3) = list(c("stock_1", "stock_2", "stock_3", "stock_101", "stock_102", "stock_103", 
                           "stock_201", "stock_202", "stock_203"),c("tick_rule", "quote_rule", "Lee y Ready"))
 
@@ -231,5 +242,5 @@ dimnames(tabla3) = list(c("stock_1", "stock_2", "stock_3", "stock_101", "stock_1
 
 
 knitr::kable(tabla1)
-knitr::kable(tabla2)
+knitr::kable(tabla2.2)
 knitr::kable(tabla3)
