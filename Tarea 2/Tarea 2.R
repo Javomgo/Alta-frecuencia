@@ -1,11 +1,11 @@
 library(tidyverse)
 
-stock = read_tsv("Stock101LOB.txt")
+stock = read_tsv("Stock2LOB.txt")
 
 #Se crean todas las variables que serán necesarias en el algoritmo
-hor_rel101 = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 3)
-prof101 = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 4)
-prof_ocul101 = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 11)
+hor_rel2 = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 3)
+prof2 = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 4)
+prof_ocul2 = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 11)
 q = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 1)
 a = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 3)
 b = matrix(nrow = (length(unique(stock$date)) * length(unique(stock$time))), ncol = 3)
@@ -65,7 +65,7 @@ for (i in 1:length(unique(stock$date))){
         }
       }
       #Cálculo de la horquilla relativa
-      hor_rel101[n, m] = (a[n, m] - b[n, m])/q[n]
+      hor_rel2[n, m] = (a[n, m] - b[n, m])/q[n]
       m = m + 1
     }
     cont = cont + 1
@@ -77,7 +77,7 @@ for (i in 1:length(unique(stock$date))){
       if(is.na(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote > q[n] & stock$quote < q[n] + k),][1,1]) == F & 
          is.na(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote < q[n] & stock$quote > q[n] - k),][1,1]) == F){
         
-        prof101[n, r] = sum(sum((stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote > q[n] & stock$quote < q[n] + k),]$dvol + 
+        prof2[n, r] = sum(sum((stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote > q[n] & stock$quote < q[n] + k),]$dvol + 
                               stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote > q[n] & stock$quote < q[n] + k),]$hvol) *
                               stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote > q[n] & stock$quote < q[n] + k),]$quote),
                         sum((stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i] & stock$quote < q[n] & stock$quote > q[n] - k),]$dvol + 
@@ -87,37 +87,37 @@ for (i in 1:length(unique(stock$date))){
       }else{break}
       r = r - 1
     }
-    prof_ocul101[n, 1] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol) /
+    prof_ocul2[n, 1] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 2] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(1,11)]) /
+    prof_ocul2[n, 2] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(1,11)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 3] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(2,12)]) /
+    prof_ocul2[n, 3] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(2,12)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 4] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(3,13)]) /
+    prof_ocul2[n, 4] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(3,13)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)   
-    prof_ocul101[n, 5] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(4,14)]) /
+    prof_ocul2[n, 5] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(4,14)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 6] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(5,15)]) /
+    prof_ocul2[n, 6] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(5,15)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 7] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(6,16)]) /
+    prof_ocul2[n, 7] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(6,16)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 8] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(7,17)]) /
+    prof_ocul2[n, 8] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(7,17)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 9] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(8,18)]) /
+    prof_ocul2[n, 9] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(8,18)]) /
                          sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                           stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 10] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(9,19)]) /
+    prof_ocul2[n, 10] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(9,19)]) /
                           sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                            stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
-    prof_ocul101[n, 11] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(10,20)]) /
+    prof_ocul2[n, 11] = sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol[c(10,20)]) /
                           sum(stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$dvol, 
                            stock[which(stock$time == unique(stock$time)[j] & stock$date == unique(stock$date)[i]),]$hvol)
     n = n + 1
