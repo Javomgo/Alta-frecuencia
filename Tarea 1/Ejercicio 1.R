@@ -3,6 +3,8 @@ library(MLmetrics)
 library(forecast)
 library(huxtable)
 
+#El código se ejecuta de forma completa para cada activo.
+#En cada ejecución se cambiarán los nombres de las variables estimadas, que quedarán almacenadas en el Workspace para posteriormente realizar las tablas.
 stock_201 = read_tsv("stock2.txt")
 
 #Se crean todas las variables que serán necesarias en el algoritmo
@@ -232,15 +234,14 @@ tabla3 = matrix(rbind(agr_prec_stock_1, agr_prec_stock_2, agr_prec_stock_3, agr_
                       agr_prec_stock_201, agr_prec_stock_202, agr_prec_stock_203), nrow = 9, ncol = 3, )
 
 
+#Asignación de nombres a las observaciones de las tablas.
 dimnames(tabla1) = list(c(),c("tick_rule", "quote_rule", "Lee y Ready"))
 dimnames(tabla2.2) = list(c("stock_1", "stock_2", "stock_3", "stock_101", "stock_102", "stock_103", 
                                                      "stock_201", "stock_202", "stock_203"), c("Media", "Desv. Típica"))
 dimnames(tabla3) = list(c("stock_1", "stock_2", "stock_3", "stock_101", "stock_102", "stock_103", 
                           "stock_201", "stock_202", "stock_203"),c("tick_rule", "quote_rule", "Lee y Ready"))
 
-
-
-
+#Comandos para mostrar las tablas y pegarlas en el word.
 knitr::kable(tabla1)
 knitr::kable(tabla2.2)
 knitr::kable(tabla3)
