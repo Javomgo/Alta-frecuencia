@@ -1,0 +1,140 @@
+---
+title: "Trabajo final (Series temporales univariantes, VARs, Cointegración)"
+author: "Javier Ortiz Montenegro"
+date: "2/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Se asigna una semilla para que el trabajo sea reproducible y se cargan las librerías necesarias.
+
+```{r}
+set.seed(1)
+library(stats)
+library(tseries)
+```
+
+Se carga el archivo con los datos.
+
+```{r}
+load("us_1960_2018.Rdata")
+```
+
+# Problema I: análisis univariante
+
+# # Considera la serie lgnp. Presenta los siguientes análisis sobre la serie:
+
+# # # 1. Gráficos de niveles y de las primeras diferencias, las ACFs, PACFs, interprétalos.
+
+
+```{r}
+plot(lgnp,type='l',lwd=2)
+T = length(lgnp)
+t = seq(1,T)
+t2 = t^2
+t3 = t^3
+
+#________________________
+
+dly = diff(lgnp)
+par(mfrow=c(1,3))
+plot(dly,type='l')
+acf(dly)
+pacf(dly)
+```
+
+El primer gráfico muestra una tendencia determinista, y por lo tanto no estacionario.
+En el segundo gráfico (primeras diferencias) ya se puede ver algo que podría ser estacionario, pero no se puede afirmar.
+El tercer y cuarto gráfico son ACF y PACF respectivamente, en ellos se puede interpretar lo que aparentemente podría ser un proceso autorregresivo de orden 2.
+
+# # # 2. Comprueba si las series (niveles y primeras diferencias) son estacionarias, en cada caso escribe hipótesis cero y alternativas, interpreta los resultados del contraste.
+
+```{r}
+
+```
+
+# # # 3. Ajusta el modelo ARMA sobre la serie estacionaria, justifica la elección del orden del modelo. Interpreta los parámetros estimados y comenta sobre su significación estadística.
+
+```{r}
+m1 = arima(dly, order = c(1, 0,0),include.mean = TRUE)
+m2 = arima(dly, order = c(2, 0,0),include.mean = TRUE)
+m3 = arima(dly, order = c(0, 0,1),include.mean = TRUE)
+m4 = arima(dly, order = c(0, 0,2),include.mean = TRUE)
+
+m1
+m2
+m3
+m4
+```
+
+El modelo ARMA que mejor se ajusta es el ARMA(2,0), la elección del orden del modelo ha sido esta por diversas razones, es el que tiene menor AIC y mayor log verosimilitud. Además en en los ACF y PACF del apartado uno ya aparentaba ser un AR(2).
+
+# # # 4. Analiza los residuos del modelo en 3. (normalidad, autocorrelación, efectos ARCH), discute la bondad del ajuste del modelo propuesto en 3. y posibles defectos.
+
+```{r}
+
+```
+
+# # # 5. Predice el crecimiento del PIB en % (tasa anualizada) 2019Q4.
+
+```{r}
+pm = predict(m2, n.ahead = 4, newxreg = NULL,
+              se.fit = TRUE)
+p4_lev = pm$pred[4]+lgnp[T]
+
+
+par(mfrow=c(1,1))
+plot(c(lgnp),type='l',lwd=2,xlim=c(0,T+5),
+     ylim=c(min(lgnp),1.2*max(lgnp)))
+lines(naive$fitted.values,lty=23) 
+points(x = T+4, y = p4_lev,col=2,pch=20)
+```
+
+El crecimiento del PIB en % sería de un `r pm$pred[4]*100`%
+
+# Problema II: VAR
+
+# # Considera las cuatro series: lgnp, lm1s, gs10 y tb3m.
+
+# # # 1. Analiza si las cuatro series en sus niveles y las primeras diferencias son estacionarias mediante inspección gráfica y contrastes sobre estacionaridad.
+
+```{r}
+
+```
+
+# # # 2. Propón un modelo VAR para las series diferenciadas, justifica la elección del orden del modelo
+
+```{r}
+
+```
+
+# # # 3. Comprueba si el VAR estimado es estacionario.
+
+
+```{r}
+#Se utiliza un modelo polinomico cubico para tratar de eliminar esta tendencia
+naive = lm(lgnp ~ t+t2+t3)
+naive
+
+#Para generar el gráfico convertimos lgnp a vector, de esta manera se elimina el tipo serie temporal y permite pintar encima los valores del modelo. Ya que previamente no era posible.
+plot(c(lgnp),type='l',lwd=2) 
+lines(naive$fitted.values,lty=23)
+```
+
+```{r}
+dty = naive$residuals
+par(mfrow=c(1,3))
+plot(dty,type = 'l')
+acf(dty)
+pacf(dty)
+
+
+adf.test(dty, alternative = c("stationary"),
+         k = trunc((length(dty)-1)^(1/3)))
+```
+
+
+

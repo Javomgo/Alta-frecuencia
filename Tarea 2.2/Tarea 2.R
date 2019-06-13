@@ -237,6 +237,8 @@ for (i in 1:length(unique(stock$date))){
   media_diaria_203[i,] = c(mean(na.omit(hor_rel_203[which(hor_rel_203[,1] == unique(stock$date)[i]),3:5])),
                            mean(prof_203[which(prof_203[,1] == unique(stock$date)[i]),3:6]))
 }
+
+#Se almacena la media diaria y el rank-sum test de Wilcoxon en una tabla para facilitar su visionado.
 tabla1[1,1] = mean(media_diaria_001[,1])
 tabla1[1,2] = wilcox.test(media_diaria_001[,1], paired = F)$p.value
 tabla1[1,3] = mean(media_diaria_001[,2])
@@ -658,13 +660,14 @@ tabla2.4[1:10,1] = c(mean(mean(prof_ocul_001[,4]), mean(prof_ocul_002[,4]), mean
                mean(mean(prof_ocul_001[,13]), mean(prof_ocul_002[,13]), mean(prof_ocul_003[,13]), mean(prof_ocul_101[,13]), mean(prof_ocul_102[,13]),
                     mean(prof_ocul_103[,13]), mean(prof_ocul_201[,13]), mean(prof_ocul_202[,13]), mean(prof_ocul_203[,13])))
 
+#Se asignan nombres a las lineas y columnas en las tablas
 dimnames(tabla2.1) = list(c(),c("Profundidad oculta total"))
 dimnames(tabla2.2) = list(c("04/08", "09/08", "02/10"), c("Profundidad oculta por semanas"))
 dimnames(tabla2.3) = list(c("001","002","003","101","102","103","201","202","203"), c("Profundidad oculta por activo"))
 dimnames(tabla2.4) = list(c("Posición 1","Posición 2","Posición 3","Posición 4","Posición 5","Posición 6","Posición 7","Posición 8","Posición 9", "Posición 10"), 
                           c("Profundidad oculta por cercanía al punto medio"))
 
-
+#Se generan las imagenes.
 ggplot(imagen1, aes(x = index)) + 
   geom_line(aes(y = V1, colour = "001")) +
   geom_line(aes(y = V3, colour = "002")) +
@@ -689,9 +692,11 @@ ggplot(imagen1, aes(x = index)) +
   geom_line(aes(y = V18, colour = "203")) +
   labs(x = "Media de cada intervalo de 15 minutos", y = "Profundidad")
 
+#Almacenamiento de la tabla de las medias de cada día de tres activos.
 tabla4.1[,c(1,2,3)] = c(media_diaria_001[,1], media_diaria_101[,1], media_diaria_201[,1])
 tabla4.2[,c(1,2,3)] = c(media_diaria_001[,2], media_diaria_101[,2], media_diaria_201[,2])
 
+#Asignación de los nombres de lineas y columnas
 dimnames(tabla4.1) = list(c("07/04/08","08/04/08","09/04/08","10/04/08","11/04/08",
                             "15/09/08","16/09/08","17/09/08","18/09/08","19/09/08",
                             "22/02/10","23/02/10","24/02/10","25/02/10","26/02/10"), 
@@ -701,7 +706,7 @@ dimnames(tabla4.2) = list(c("07/04/08","08/04/08","09/04/08","10/04/08","11/04/0
                             "22/02/10","23/02/10","24/02/10","25/02/10","26/02/10"), 
                           c("prof_001","prof_101","prof_201"))
 
-
+#Se muestran las tablas.
 knitr::kable(tabla1)
 knitr::kable(tabla2.1)
 knitr::kable(tabla2.2)
