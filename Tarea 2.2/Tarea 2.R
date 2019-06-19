@@ -1,6 +1,8 @@
+#Se cargan las librerías necesarias.
 library(tidyverse)
 library(ggplot2)
 
+#Se leen los datos del archivo y almacenan en un dataframe.
 stock = read_tsv("Stock3LOB.txt")
 
 #Se crean todas las variables que serán necesarias en el algoritmo
