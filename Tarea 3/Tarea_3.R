@@ -1,17 +1,27 @@
 library(tidyverse)
-stock = read_tsv("Stock202.txt")
-stockNBBO = read_tsv("Stock202BBO.txt")
+stock = read_tsv("Stock102.txt")
+stockNBBO = read_tsv("Stock102NBBO.txt")
 
-#coef_003 = matrix(nrow = 22, ncol = 5)
-#desc_hor_003 = matrix(nrow = 22, ncol = 5)
-#desc_vol_003 = matrix(nrow = 22, ncol = 4)
+#coef_101 = matrix(nrow = 22, ncol = 5)
+#desc_hor_101 = matrix(nrow = 22, ncol = 5)
+#desc_vol_101 = matrix(nrow = 22, ncol = 4)
+coef_102 = matrix(nrow = 22, ncol = 5)
+desc_hor_102 = matrix(nrow = 22, ncol = 5)
+desc_vol_102 = matrix(nrow = 22, ncol = 4)
 #coef_201 = matrix(nrow = 22, ncol = 5)
 #desc_hor_201 = matrix(nrow = 22, ncol = 5)
 #desc_vol_201 = matrix(nrow = 22, ncol = 4)
 #coef_202 = matrix(nrow = 22, ncol = 5)
 #desc_hor_202 = matrix(nrow = 22, ncol = 5)
 #desc_vol_202 = matrix(nrow = 22, ncol = 4)
+#coef_203 = matrix(nrow = 22, ncol = 5)
+#desc_hor_203 = matrix(nrow = 22, ncol = 5)
+#desc_vol_203 = matrix(nrow = 22, ncol = 4)
 
+
+coef = matrix(nrow = 22, ncol = 5)
+desc_hor = matrix(nrow = 22, ncol = 5)
+desc_vol = matrix(nrow = 22, ncol = 4)
 stock_tot = inner_join(stockNBBO, stock[,c(1,2,5)], by=c("day","time"))
 
 
@@ -42,43 +52,80 @@ for(i in unique(stock_tot$day)){
 }
 
 for(i in 1:length(unique(stock_tot$day))){
-  coef_202[i,] = c(unique(stock_tot$day)[i], get(paste("lm",unique(stock_tot$day)[i],sep=""))[[1]], 
+  coef[i,] = c(unique(stock_tot$day)[i], get(paste("lm",unique(stock_tot$day)[i],sep=""))[[1]], 
                    sigma(get(paste("lm",unique(stock_tot$day)[i],sep="")))^2)
 }
 
-colnames(coef_202) = c("day", "intercept", "Xt", "Xt-1", "RSE^2")
+
 
 for(i in 1:length(unique(stock_tot$day))){
-  desc_hor_202[i,] = c(-coef_202[i,4], coef_202[i,3] + coef_202[i,4], coef_202[i,5], 
-                       (coef_202[i,3] + coef_202[i,4])/coef_202[i,3], -coef_202[i,4]/coef_202[i,3])
+  desc_hor[i,] = c(-coef[i,4], coef[i,3] + coef[i,4], coef[i,5], 
+                       (coef[i,3] + coef[i,4])/coef[i,3], -coef[i,4]/coef[i,3])
 }
 
-colnames(desc_hor_202) = c("gamma", "alpha", "RSE^2", "SA", "CO")
+
 
 for(i in 1:length(unique(stock_tot$day))){
-  desc_vol_202[i,c(1,2)] = c((desc_hor_202[i,2])^2 / ((desc_hor_202[i,2])^2 + desc_hor_202[i,3]), 
-                       (2*desc_hor_202[i,1]*(desc_hor_202[i,2] + desc_hor_202[i,1]) + desc_hor_202[i,2]^2 + desc_hor_202[i,3]))
-  desc_vol_202[i,c(3,4)] = c((2*desc_hor_202[i,1]*(desc_hor_202[i,2] + desc_hor_202[i,1]) / desc_vol_202[i,2]), 
-                             desc_hor_202[i,3] / desc_vol_202[i,2])
+  desc_vol[i,c(1,2)] = c((desc_hor[i,2])^2 / ((desc_hor[i,2])^2 + desc_hor[i,3]), 
+                       (2*desc_hor[i,1]*(desc_hor[i,2] + desc_hor[i,1]) + desc_hor[i,2]^2 + desc_hor[i,3]))
+  desc_vol[i,c(3,4)] = c((2*desc_hor[i,1]*(desc_hor[i,2] + desc_hor[i,1]) / desc_vol[i,2]), 
+                             desc_hor[i,3] / desc_vol[i,2])
 }
 
-colnames(desc_vol_202) = c("SA_PE", "var_dif_PO", "NI_PO", "IP_PO")
-stock_tot_202 = stock_tot
+
+
 stock_tot$q5 = NA
 stock_tot$q30 = NA
 stock_tot$q60 = NA
+stock_tot$Se = NA
+stock_tot$Srz5 = NA
+stock_tot$Srz30 = NA
+stock_tot$Srz60 = NA
+stock_tot$ip5 = NA
+stock_tot$ip30 = NA
+stock_tot$ip60 = NA
+
 for(i in 1:nrow(stock_tot)){
-  if(length(stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 5)),]$day) != 0){
-    stock_tot$q5[i] = ((stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 5)),]$bid[1] +
-                        stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 5)),]$ask[1]) / 2) 
+  if(length(stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 5)),]$day) != 0){
+    stock_tot$q5[i] = ((stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 5)),]$bid[1] +
+                        stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 5)),]$ask[1]) / 2) 
   }else{next}
-  if(length(stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time == (stock_tot$time[i] + 30)),]$day) != 0){
-    stock_tot$q30[i] = ((stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 30)),]$bid[1] +
-                         stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 30)),]$ask[1]) / 2) 
+  if(length(stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 30)),]$day) != 0){
+    stock_tot$q30[i] = ((stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 30)),]$bid[1] +
+                         stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 30)),]$ask[1]) / 2) 
   }else{next}
-  if(length(stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time == (stock_tot$time[i] + 60)),]$day) != 0){
-    stock_tot$q60[i] = ((stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 60)),]$bid[1] +
-                         stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time <= (stock_tot$time[i] + 60)),]$ask[1-]) / 2) 
+  if(length(stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 60)),]$day) != 0){
+    stock_tot$q60[i] = ((stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 60)),]$bid[1] +
+                         stockNBBO[which(stockNBBO$day == stock_tot$day[i] & stockNBBO$time >= (stock_tot$time[i] + 60)),]$ask[1]) / 2) 
   }else{next}
+  print(paste(i, " 2", sep = ""))
 }
-sum(!is.na(stock_tot[,c(8,9,10)]))
+
+stock_tot = stock_tot[!is.na(stock_tot$q5 & stock_tot$q30 & stock_tot$q60),]
+
+for(i in 1:nrow(stock_tot)){
+  if(!is.na(stock_tot$buysell[i])){
+    if(stock_tot$buysell[i] == 1){
+      stock_tot$Se[i] = 2*(stock_tot$ask[i] - stock_tot$q[i])
+      stock_tot$Srz5[i] = 2*(stock_tot$ask[i] - stock_tot$q5[i])
+      stock_tot$Srz30[i] = 2*(stock_tot$ask[i] - stock_tot$q30[i])
+      stock_tot$Srz60[i] = 2*(stock_tot$ask[i] - stock_tot$q60[i])
+    }else{
+      stock_tot$Se[i] = -2*(stock_tot$bid[i] - stock_tot$q[i])
+      stock_tot$Srz5[i] = -2*(stock_tot$bid[i] - stock_tot$q5[i])
+      stock_tot$Srz30[i] = -2*(stock_tot$bid[i] - stock_tot$q30[i])
+      stock_tot$Srz60[i] = -2*(stock_tot$bid[i] - stock_tot$q60[i])
+    }
+    stock_tot$ip5[i] = stock_tot$Se[i] - stock_tot$Srz5[i]
+    stock_tot$ip30[i] = stock_tot$Se[i] - stock_tot$Srz30[i]
+    stock_tot$ip60[i] = stock_tot$Se[i] - stock_tot$Srz60[i]
+  }
+}
+
+stock_tot_102 = stock_tot
+coef_102 = coef
+desc_hor_102 = desc_hor
+desc_vol_102 = desc_vol
+colnames(coef_102) = c("day", "intercept", "Xt", "Xt-1", "RSE^2")
+colnames(desc_hor_102) = c("gamma", "alpha", "RSE^2", "SA", "CO")
+colnames(desc_vol_102) = c("SA_PE", "var_dif_PO", "NI_PO", "IP_PO")
