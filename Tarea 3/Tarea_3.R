@@ -2,16 +2,19 @@
 library(tidyverse)
 
 #Se leen los datos y almacenan en dataframes.
-stock = read_tsv("Stock102.txt")
-stockNBBO = read_tsv("Stock102NBBO.txt")
+stock = read_tsv("Stock103.txt")
+stockNBBO = read_tsv("Stock103NBBO.txt")
 
 #Se crean las variables que serán necesarias en el algoritmo
 #coef_101 = matrix(nrow = 22, ncol = 5)
 #desc_hor_101 = matrix(nrow = 22, ncol = 5)
 #desc_vol_101 = matrix(nrow = 22, ncol = 4)
-coef_102 = matrix(nrow = 22, ncol = 5)
-desc_hor_102 = matrix(nrow = 22, ncol = 5)
-desc_vol_102 = matrix(nrow = 22, ncol = 4)
+#coef_102 = matrix(nrow = 22, ncol = 5)
+#desc_hor_102 = matrix(nrow = 22, ncol = 5)
+#desc_vol_102 = matrix(nrow = 22, ncol = 4)
+coef_103 = matrix(nrow = 22, ncol = 5)
+desc_hor_103 = matrix(nrow = 22, ncol = 5)
+desc_vol_103 = matrix(nrow = 22, ncol = 4)
 #coef_201 = matrix(nrow = 22, ncol = 5)
 #desc_hor_201 = matrix(nrow = 22, ncol = 5)
 #desc_vol_201 = matrix(nrow = 22, ncol = 4)
@@ -138,11 +141,11 @@ for(i in 1:nrow(stock_tot)){
 }
 
 #Se almacenan las variables para no sobreescribirlas con el siguiente activo.
-stock_tot_102 = stock_tot
-coef_102 = coef
-desc_hor_102 = desc_hor
-desc_vol_102 = desc_vol
+stock_tot_103 = stock_tot
+coef_103 = coef
+desc_hor_103 = desc_hor
+desc_vol_103 = desc_vol
 #Se asignan nombres a las columnas.
-colnames(coef_102) = c("day", "intercept", "Xt", "Xt-1", "RSE^2")
-colnames(desc_hor_102) = c("gamma", "alpha", "RSE^2", "SA", "CO")
-colnames(desc_vol_102) = c("SA_PE", "var_dif_PO", "NI_PO", "IP_PO")
+colnames(coef_103) = c("day", "intercept", "Xt", "Xt-1", "RSE^2")
+colnames(desc_hor_103) = c("gamma", "alpha", "RSE^2", "SA", "CO")
+colnames(desc_vol_103) = c("SA_PE", "var_dif_PO", "NI_PO", "IP_PO")
