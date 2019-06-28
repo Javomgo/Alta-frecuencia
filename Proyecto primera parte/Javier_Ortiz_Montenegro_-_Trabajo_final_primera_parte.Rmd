@@ -1,0 +1,499 @@
+---
+title: "Trabajo final (Series temporales univariantes, VARs, Cointegración)"
+author: "Javier Ortiz Montenegro"
+date: "28/6/2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = F)
+```
+
+Se asigna una semilla para que el trabajo sea reproducible y se cargan las librerías necesarias.
+
+```{r message=FALSE}
+set.seed(1)
+library(aTSA)
+library(stats)
+library(tseries)
+library(vars)
+```
+
+Se carga el archivo con los datos.
+
+```{r}
+load("us_1960_2018.Rdata")
+```
+
+# Problema I: análisis univariante
+
+## Considera la serie lgnp. Presenta los siguientes análisis sobre la serie:
+
+### 1. Gráficos de niveles y de las primeras diferencias, las ACFs, PACFs, interprétalos.
+
+
+```{r}
+#Se muestra un gráfico de niveles
+plot(lgnp,type='l',lwd=2)
+```
+
+El primer gráfico muestra una tendencia determinista, y por lo tanto no estacionario.
+
+```{r}
+#Se calculan las diferencias y se muestran tres gráficos, el gráfico de las diferencias, el gráfico con ACF y por último con PACF
+dlgnp = diff(lgnp)
+par(mfrow=c(1,3))
+plot(dlgnp,type='l')
+acf(dlgnp)
+pacf(dlgnp)
+```
+
+Ahora se muestran tres gráficos, en el primero (primeras diferencias) ya se puede ver algo que podría ser estacionario, pero no se puede afirmar.
+En el segundo y tercer gráfico, que son ACF y PACF respectivamente, se puede interpretar lo que aparentemente podría ser un proceso autorregresivo de orden 2.
+
+### 2. Comprueba si las series (niveles y primeras diferencias) son estacionarias, en cada caso escribe hipótesis cero y alternativas, interpreta los resultados del contraste.
+
+```{r}
+#Se comprueba si son estacionarias mediante el uso del "Augmented Dickey-Fuller Test".
+DFt_lgnp = adf.test(lgnp, alternative = c("stationary"), k = trunc((length(lgnp)-1)^(1/3)))
+DFt_dlgnp = adf.test(dlgnp, alternative = c("stationary"), k = trunc((length(dlgnp)-1)^(1/3)))
+DFt_lgnp
+```
+
+El primer caso es la comprobación de la serie de niveles, siendo la hipótesis nula que no es una serie estacionaria y la hipótesis alternativa que es estacionaria.
+El p-valor resultante del "Augmented Dickey-Fuller Test" es `r round(DFt_lgnp$p.value, 2)`, por lo tanto no se puede rechazar la hipotesis nula, y en el caso de la serie de niveles se puede confirmar que no es estacionaria.
+
+```{r}
+DFt_dlgnp
+```
+
+En segundo lugar se realiza la comprobación de la serie tras primeras diferencias, se mantienen las mismas hipótesis nula y alternativa. Siendo la nula que no es una serie estacionaria y la alternativa que es estacionaria.
+Como resultado, el p-valor del test es `r round(DFt_dlgnp$p.value, 2)`, por lo tanto se rechaza la hipótesis nula y se puede afirmar que la serie diferenciada es estacionaria.
+
+### 3. Ajusta el modelo ARMA sobre la serie estacionaria, justifica la elección del orden del modelo. Interpreta los parámetros estimados y comenta sobre su significación estadística.
+
+```{r}
+#Aunque se presuponga por los gráficos anteriores que la mejor opción sería un ARMA(2,0) se comprobarán 4 casos distintos.
+
+m1 = arima(dlgnp, order = c(1, 0,0),include.mean = TRUE)
+m2 = arima(dlgnp, order = c(2, 0,0),include.mean = TRUE)
+m3 = arima(dlgnp, order = c(0, 0,1),include.mean = TRUE)
+m4 = arima(dlgnp, order = c(0, 0,2),include.mean = TRUE)
+
+m1
+m2
+m3
+m4
+```
+
+El modelo ARMA que mejor se ajusta es el ARMA(2,0), la elección del orden del modelo ha sido por diversas razones.
+La primera razón es que es el modelo con menor AIC y mayor log verosimilitud (Por lo tanto el mejor modelo de los 4). 
+En segundo lugar, si miramos el ACF y PACF del apartado uno ya aparentaba ser un AR(2).
+
+### 4. Analiza los residuos del modelo en 3. (normalidad, autocorrelación, efectos ARCH), discute la bondad del ajuste del modelo propuesto en 3. y posibles defectos.
+
+```{r}
+#Se analizan los residuos del modelo elegido en 3.
+par(mfrow=c(1,2))
+ts.plot(m2$residuals)
+pacf(m2$residuals)
+```
+
+Este primer gráfico muestra como los residuos muestran un patrón aparentemente de ruido blanco, media cero y con una desviación aleatoria.
+El segundo muestra un PACF que se mantiene en todo momento entre los intervalos de confianza.
+Lo mostrado en ambos gráficos tienen sentido si tenemos en cuenta que el modelo seleccionado es estacionario.
+
+```{r}
+#Se realiza un análisis de normalidad, inicialmente mediante un gráfico que mostrará la distribución de los residuos en formato de histograma.
+grid = seq(-4,4,length=500)
+hist(m2$residuals/sqrt(m2$sigma2),freq=FALSE)
+lines(grid,dnorm(grid), col = "red")
+```
+
+```{r}
+#En segundo lugar se analiza la normalidad mediante el análisis de la asimetría de los residuos.
+ks.test(m2$residuals/sqrt(m2$sigma2),dnorm)
+```
+
+El "Kolmogorov-Smirnov Test" realizado analiza la asimetría de los residuos, su hipótesis nula es que existe asimetría y la hipótesis alternativa es la existencia de simetria por los dos lados.
+Al observar el p-valor se puede concluir que se rechaza la hipótesis nula y por lo tanto existe normalidad.
+
+Se ha demostrado tanto con el gráfico como mediante "Kolmogorov-Smirnov Test".
+
+```{r}
+#Ahora se pasa a analizar la autocorrelación del modelo mediante el "Ljung-Box Test"
+Box.test(m2$residuals, lag = 8, type = c("Ljung-Box"))
+Box.test(m2$residuals, lag = 16, type = c("Ljung-Box"))
+Box.test(m2$residuals, lag = 24, type = c("Ljung-Box"))
+```
+
+El test de Ljung-Box estima la autocorrelación de un modelo asumiendo como hipótesis nula que los datos se distribuyen de forma independiente, o lo que es lo mismo, que no existe autocorrelación. Y su hipótesis alternativa es que los datos no se distribuyen de forma independiente, es decir, que existe autocorrelación.
+
+Se ha realizado el test con un retardo de 8, 16, y 24 segundos y en todos los casos se puede decir, tras mirar el p-valor, que no se rechaza la hipotesis nula y, por lo tanto, que no existe autocorrelación.
+
+```{r}
+#Se analizan los efectos ARCH
+arch1 = aTSA::arch.test(m2, output = F)
+arch1
+```
+
+En la tabla se puede ver tests ARCH para diferentes ordenes, nos basaremos en los test LM para seguir el mismo criterio que se usará en los modelos multivariantes. Para ordenes pequeños se rechaza la hipótesis nula y, por lo tanto, los residuos son heterocedasticos. O lo que es lo mismo, los cuadrados de los residuos no son ruido blanco.
+Sin embargo, a partir de orden 16 no se rechaza la hipótesis nula y se asume que los residuos son homocedasticos, y los cuadrados de los residuos son ruido blanco.
+
+Una vez realizados los análisis de los residuos se puede decir que la bondad de ajuste, aun siendo la mejor de los 4 modelos propuestos, no es perfecta y presenta algunos defectos. Como sería residuos heterocedasticos para ordenes por debajo de 16.
+
+### 5. Predice el crecimiento del PIB en % (tasa anualizada) 2019Q4.
+
+```{r}
+#Se realiza la predicción del crecimiento del PIB en porcentaje y logaritmo para 2019Q4
+T = length(lgnp)
+pm = predict(m2, n.ahead = 4, newxreg = NULL,
+              se.fit = TRUE)
+
+#Se calcula 
+p4_lev = pm$pred[4]+lgnp[T]
+
+#Se genera el gráfico para mostrar cual es la predicción en 2019Q4
+par(mfrow=c(1,1))
+plot(c(lgnp),type='l',lwd=2,xlim=c(0,T+5),
+     ylim=c(min(lgnp),1.2*max(lgnp)))
+points(x = T+4, y = p4_lev,col=2,pch=20)
+```
+
+El punto rojo es la predicción del lgnp en 2019Q4.
+
+El crecimiento del PIB, en % y logaritmo, sería de un `r pm$pred[4]*100`%
+
+# Problema II: VAR
+
+## Considera las cuatro series: lgnp, lm1s, gs10 y tb3m.
+
+### 1. Analiza si las cuatro series en sus niveles y las primeras diferencias son estacionarias mediante inspección gráfica y contrastes sobre estacionaridad.
+
+```{r}
+#Se generan los gráficos para la inspección.
+par(mfrow=c(1,4))
+ts.plot(lgnp,main='lgnp');ts.plot(lm1s,main='lm1s');ts.plot(gs10,main='gs10');ts.plot(tb3m,main='tb3m')
+```
+
+Los primeros dos gráficos (lgnp y lm1s) muestran tendencias deterministas, y por lo tanto no son estacionarios.
+Los dos últimos (gs10 y tb3m) aunque no muestren tendencias deterministas tampoco se puede decir parezca ser un paseo aleatorio.
+No obstante, se realizarán los análisis pertinentes para asegurar si son o no estacionarios.
+
+```{r}
+#En segundo lugar se realizan los contrastes mediante "Augmented Dickey-Fuller Test" en las cuatro series en sus niveles.
+lapply(list(lgnp,lm1s,gs10,tb3m),adf.test)
+```
+
+Al igual que en el problema I se utilizará el "Augmented Dickey-Fuller Test" para confirmar si las series en sus niveles son estacionarias o no. H0 y Ha siguen siendo iguales, siendo la hipótesis nula que no es una serie estacionaria y la hipótesis alternativa que es estacionaria.
+
+En las cuatro series no se puede rechazar la hipótesis nula, por lo tanto, las series en sus niveles no son estacionarias.
+
+```{r}
+#Se procede ahora a calcular las primeras diferencias para repetir el análisis. La diferencia de lgnp ya está calculada, por lo tanto la omitiré.
+dlm1s = diff(lm1s)
+dgs10  = diff(gs10)
+dtb3m = diff(tb3m)
+
+#Se realizan ahora la inspección gráfica, los contrastes ACF, PACF y "Augmented Dickey-Fuller Test" sobre las diferencias.
+par(mfrow=c(1,4))
+#Se generan los gráficos de las series diferenciadas.
+ts.plot(dlgnp,main='dlgnp');ts.plot(dlm1s,main='dlm1s');ts.plot(dgs10,main='dgs10');ts.plot(dtb3m,main='dtb3m')
+#ACF
+acf(dlgnp);acf(dlm1s);acf(dgs10);acf(dtb3m)
+#PACF
+pacf(dlgnp);pacf(dlm1s);pacf(dgs10);pacf(dtb3m)
+```
+
+Tras la inspección gráfica de las series diferenciadas, la observación de ACF y PACF todas las series aparentan ser series estacionarias, no obstante se comprobará mediante el Augmented Dickey-Fuller Test. 
+
+```{r}
+#Augmented Dickey-Fuller Test para las series diferenciadas y así confirmar que sean estacionarias.
+lapply(list(dlgnp,dlm1s,dgs10,dtb3m),adf.test)
+```
+
+Una vez se analizan los p-valor de todos los tests se confirma la teoria ya que las hipótesis nulas se rechazan en todas las series (dlm1s se rechaza al 5%) y, por lo tanto, son estacionarias.
+
+### 2. Propón un modelo VAR para las series diferenciadas, justifica la elección del orden del modelo
+
+```{r}
+#Se crea la matriz con el orden que en teoría desde mi punto de vista tiene sentido económico.
+#Aunque en este caso no quede claro que serie genera un efecto sobre otra, desde mi punto de vista el stock de dinero afecta al PIB, ya que la disponibilidad de dinero es una política expansiva que tiene un efecto de crecimiento sobre el PIB y de ahí deduzco que este orden sería el correcto. Por otro lado, las variaciones del PIB afectan a la confianza crediticia del pais, y esto se ve reflejado sobre los tipos de interes. Como el típo de interés más volatil es el del corto plazo primero se vería afectada la tasa a 3 meses, y posteriormente la tasa a 10 años.
+vardat = matrix(cbind(dlm1s,dlgnp,dtb3m,dgs10),nrow=length(dlm1s),ncol=4)
+colnames(vardat) = c("dlm1s","dlgnp","dtb3m","dgs10")
+
+#Se genera la serie temporal conjunta.
+var_dat = ts(vardat,start=c(1960, 1), frequency=4)
+
+#Mediante el comando VARselect nos guiamos para seleccionar el orden óptimo.
+var.ord = VARselect(var_dat, lag.max = 12, type="const", season=4)
+var.ord
+```
+
+Se seleccionará un orden 6 por el criterio de AIC.
+
+```{r}
+m1VAR = VAR(var_dat,p=var.ord$selection[1],type = "const", season=4)
+```
+
+
+### 3. Comprueba si el VAR estimado es estacionario.
+
+
+```{r}
+#Se comprueba si el VAR estimado es estacionario mediante la observación de los valores propios. Esto se consigue mediante el comando roots.
+
+roots = roots(m1VAR)
+roots
+```
+
+Todos los valores propios del modelo son menores a 1, es decir, todas las raices están fuera del circulo unitario.
+Esto demuestra que nuestro VAR es estacionario.
+
+### 4. Analiza los residuos (normalidad, autocorrelación, efectos ARCH), discute la bondad del ajuste del modelo propuesto y posibles defectos.
+
+```{r}
+#Se procede ahora al análisis de la normalidad mediante el uso del test de Jarque-Bera, analizando la curtosis y asimetría.
+normality.test(m1VAR)
+```
+
+Los resultados de este análisis muestran, mediante la observación de los p-valores, que se rechaza la hipótesis nula de normalidad de los residuos, al igual que se rechaza la hipótesis nula de exceso de curtosis curtosis y asimetría nulos. O lo que es lo mismo, existe un exceso de curtosis y asimetría.
+
+```{r}
+#En segundo lugar se realiza el análisis de autocorrelación.
+serial.test(m1VAR,lags.pt=12,type="PT.adjusted")
+serial.test(m1VAR,lags.bg = 5,type="ES") 
+```
+
+Tanto el test de Portmanteau ajustado como el test de Edgerton-Shukur se realizan con la hipótesis nula de no existencia de autocorrelación y la hipótesis alternativa de autocorrelación.
+
+En el caso del test de portmanteau ajustado se rechaza la hipótesis nula, por lo tanto, según el criterio de dicho test existiría autocorrelación.
+Sin embargo, en el caso del test de Edgerton-Shukur no se rechaza la hipótesis nula y, en este caso, no existiría autocorrelación.
+
+```{r}
+#Se procede ahora a realizar el análisis de los efectos ARCH.
+arch = vars::arch.test(m1VAR)
+arch
+```
+
+La hipótesis nula del test arch es que los residuos son homocedasticos, al observar el p-valor se puede rechazar la hipótesis nula por lo cual se asume que los residuos son heterocedasticos. Por lo tanto, los residuos al cuadrado no serán ruido blanco.
+
+Tras realizar los análisis de los residuos se puede decir que el la bondad de ajuste tiene varios defectos, no existe normalidad de los residuos, según uno de los dos test realizados existe autocorrelación, y por último los residuos son heterocedasticos. Por lo tanto, aún existe información que podía ser explicada por el modelo. Comentar que se han probado el resto de criterios de selección del orden del VAR y este es el que tiene mejores resultados.
+
+### 5. Calcula, dibuja e interpreta las funciones de respuesta al impulso para 12 pasos delante suponiendo que: 
+### a) los residuos no son correlacionados; b) los residuos son correlacionados. 
+### Explica las diferencias entre a) y b).
+
+```{r}
+#Calculo de los no correlacionados
+#Impulsos de dlm1s
+irfr_m1s_nc = irf(m1VAR, impulse = "dlm1s", response = "dlm1s",  n.ahead = 12)
+irfr_m1s_gnp_nc = irf(m1VAR, impulse = "dlm1s", response = "dlgnp",  n.ahead = 12)
+irfr_m1s_tb3m_nc = irf(m1VAR, impulse = "dlm1s", response = "dtb3m",  n.ahead = 12)
+irfr_m1s_gs10_nc = irf(m1VAR, impulse = "dlm1s", response = "dgs10",  n.ahead = 12)
+#Impulsos de dlgnp
+irfr_gnp_m1s_nc = irf(m1VAR, impulse = "dlgnp", response = "dlm1s",  n.ahead = 12)
+irfr_gnp_nc = irf(m1VAR, impulse = "dlgnp", response = "dlgnp",  n.ahead = 12)
+irfr_gnp_tb3m_nc = irf(m1VAR, impulse = "dlgnp", response = "dtb3m",  n.ahead = 12)
+irfr_gnp_gs10_nc = irf(m1VAR, impulse = "dlgnp", response = "dgs10",  n.ahead = 12)
+#Impulsos de dtb3m
+irfr_tb3m_m1s_nc = irf(m1VAR, impulse = "dtb3m", response = "dlm1s",  n.ahead = 12)
+irfr_tb3m_gnp_nc = irf(m1VAR, impulse = "dtb3m", response = "dlgnp",  n.ahead = 12)
+irfr_tb3m_nc = irf(m1VAR, impulse = "dtb3m", response = "dtb3m",  n.ahead = 12)
+irfr_tb3m_gs10_nc = irf(m1VAR, impulse = "dtb3m", response = "dgs10",  n.ahead = 12)
+#Impulsos de dgs10
+irfr_gs10_m1s_nc = irf(m1VAR, impulse = "dgs10", response = "dlm1s",  n.ahead = 12)
+irfr_gs10_gnp_nc = irf(m1VAR, impulse = "dgs10", response = "dlgnp",  n.ahead = 12)
+irfr_gs10_tb3m_nc = irf(m1VAR, impulse = "dgs10", response = "dtb3m",  n.ahead = 12)
+irfr_gs10_nc = irf(m1VAR, impulse = "dgs10", response = "dgs10",  n.ahead = 12)
+#Calculo de los correlacionados
+#Impulsos de dlm1s
+irfr_m1s = irf(m1VAR, impulse = "dlm1s", response = "dlm1s",  n.ahead = 12, ortho = F)
+irfr_m1s_gnp = irf(m1VAR, impulse = "dlm1s", response = "dlgnp",  n.ahead = 12, ortho = F)
+irfr_m1s_tb3m = irf(m1VAR, impulse = "dlm1s", response = "dtb3m",  n.ahead = 12, ortho = F)
+irfr_m1s_gs10 = irf(m1VAR, impulse = "dlm1s", response = "dgs10",  n.ahead = 12, ortho = F)
+#Impulsos de dlgnp
+irfr_gnp_m1s = irf(m1VAR, impulse = "dlgnp", response = "dlm1s",  n.ahead = 12, ortho = F)
+irfr_gnp = irf(m1VAR, impulse = "dlgnp", response = "dlgnp",  n.ahead = 12, ortho = F)
+irfr_gnp_tb3m = irf(m1VAR, impulse = "dlgnp", response = "dtb3m",  n.ahead = 12, ortho = F)
+irfr_gnp_gs10 = irf(m1VAR, impulse = "dlgnp", response = "dgs10",  n.ahead = 12, ortho = F)
+#Impulsos de dtb3m
+irfr_tb3m_m1s = irf(m1VAR, impulse = "dtb3m", response = "dlm1s",  n.ahead = 12, ortho = F)
+irfr_tb3m_gnp = irf(m1VAR, impulse = "dtb3m", response = "dlgnp",  n.ahead = 12, ortho = F)
+irfr_tb3m = irf(m1VAR, impulse = "dtb3m", response = "dtb3m",  n.ahead = 12, ortho = F)
+irfr_tb3m_gs10 = irf(m1VAR, impulse = "dtb3m", response = "dgs10",  n.ahead = 12, ortho = F)
+#Impulsos de dgs10
+irfr_gs10_m1s = irf(m1VAR, impulse = "dgs10", response = "dlm1s",  n.ahead = 12, ortho = F)
+irfr_gs10_gnp = irf(m1VAR, impulse = "dgs10", response = "dlgnp",  n.ahead = 12, ortho = F)
+irfr_gs10_tb3m = irf(m1VAR, impulse = "dgs10", response = "dtb3m",  n.ahead = 12, ortho = F)
+irfr_gs10 = irf(m1VAR, impulse = "dgs10", response = "dgs10",  n.ahead = 12, ortho = F)
+
+#Gráfico m1s y gnp no correlacionados
+plot(irfr_m1s_gnp_nc)
+#Gráficos m1s y gnp correlacionados
+plot(irfr_m1s_gnp)
+#Gráficos gnp y gs10 no correlacionados
+plot(irfr_gnp_gs10_nc)
+#Gráficos gnp y gs10 correlacionados
+plot(irfr_gnp_gs10)
+#Gráficos tb3m y m1s no correlacionados
+plot(irfr_tb3m_m1s_nc)
+#Gráficos tb3m y m1s correlacionados
+plot(irfr_tb3m_m1s)
+#Gráficos gs10 consigo mismo no correlacionados
+plot(irfr_gs10_nc)
+#Gráficos gs10 consigo mismo correlacionados
+plot(irfr_gs10)
+```
+
+No se muestran todos los gráficos por la cantidad que son (32), lo cual ocuparía demasiado espacio. Así que se muestran algunos seleccionados.
+
+Se puede apreciar en los gráficos que en todos los casos cuando se supone residuos correlacionados los valores entre los que fluctuan son mayores aún siguiendo el mismo patrón o un patrón parecido.
+Otro detalle es que cuando se suponen residuos correlacionados la respuesta al impulso se inicia en 0.
+
+Un último detalle a comentar es como en muchos casos la respuesta es significativa en los primeros periodos, pero desaparece en no más de 3 periodos.
+
+# Problema III: Cointegración
+
+## Considera las cuatro series: lgnp, lm1s, gs10 y tb3m.
+
+### 1. Confirma que todas las series son I(1).
+
+```{r}
+#Para comprobar que las series son I(1) se comprobará que sean estacionarias. (Como ya se ha visto en puntos anteriores son estacionarias cuando se realizan primeras diferencias)
+adf.test(lgnp)
+adf.test(lm1s)
+adf.test(gs10)
+adf.test(tb3m)
+
+#Test de las series en primeras diferencias.
+adf.test(dlgnp)
+adf.test(dlm1s)
+adf.test(dgs10)
+adf.test(dtb3m)
+```
+
+Los p-valores nos permiten rechazar la hipótesis nula cuando se han realizado primeras diferencias, sin embargo si no se han realizado primeras diferencias los p-valores no nos permiten rechazar la hipótesis nula. Esto significa que sin primeras diferencias las series individualmente no son estacionarias y, por lo tanto, también I(1).
+
+### 2. Realiza el contraste de cointegración de Johansen (las dos versiones), interpreta los resultados de las pruebas.
+
+```{r}
+#Se crea la matriz con las series para analizar el contraste de cointegración de Johansen
+tipos <- data.frame(lm1s,lgnp,tb3m,gs10)
+#Se calcula el orden óptimo
+ord_VAR<-VARselect(tipos,lag.max=24, type="both")
+ord_VAR
+```
+
+Según el criterio AIC el orden debe ser `r ord_VAR$selection[1]`. Por lo tanto será el que se use en el test Johansen
+
+```{r}
+#Se realizan los dos tipos de test de Johansen.
+jo_tra<-ca.jo(tipos,type="trace",ecdet="const",K=ord_VAR$selection[1])
+jo_eig<-ca.jo(tipos,type="eigen",ecdet="const",K=ord_VAR$selection[1])
+
+summary(jo_tra)
+summary(jo_eig)
+```
+
+Según los resultados del test frente al valor crítico en las tablas de los dos tipos de test de Johansen (El valor del test es menor a los valores críticos cuando r <= 2), existen 2 relaciones de cointegración. 
+
+### 3. En caso de la(-s) relación(-es) de las relaciones de cointegración, construye la(-s) serie(-s) de cointegración, preséntala(-s) gráficamente, comprueba si es(son) estacionaria(-s).
+
+```{r}
+#Se construyen las series de cointegración.
+wt1 = lm1s - 2.6516303*lgnp + 0.4725777*tb3m - 0.4486338*gs10 + 20.7612740 
+wt2 = lm1s - 4.111305*lgnp - 2.012733*tb3m + 1.914019*gs10 + 31.817292
+
+#Se presentan gráficamente.
+plot(wt1,type='l')
+lines(wt2,col=2)
+```
+
+La gráfica muestra (la serie en rojo no se ve demasiado bien) como las series cointegradas aparentemente siguen el mismo patrón en sentidos inversos, cuando una sube la otra baja y viceversa.
+
+```{r}
+#Se realizan los Augmented Dickey-Fuller Test para comprobar su estacionariedad.
+adf.test(wt1)
+adf.test(wt2)
+```
+
+
+Tras realizar el "Augmented Dickey-Fuller Test" el p-valor nos permite rechazar la hipótesis nula de no estacionariedad. Por lo tanto, las series de cointegración son estacionarias.
+
+### 4. Utilizando la función vec2var convierte el objecto del apartado 2. a un modelo VAR con el rango de cointegración elegido en 2. y dibuja e interpreta las funciones de la respuesta al impulso.
+
+```{r}
+#Se convierte el objeto del apartado 2 a VAR.
+var_r2 = vec2var(jo_eig, r = 2)
+
+#Se calculan las funciones de respuesta al impulso.
+#Impulsos de dlm1s
+irfr_m1s_r2 = irf(var_r2, impulse = "lm1s", response = "lm1s",  n.ahead = 12, ortho = F)
+irfr_m1s_gnp_r2 = irf(var_r2, impulse = "lm1s", response = "lgnp",  n.ahead = 12, ortho = F)
+irfr_m1s_tb3m_r2 = irf(var_r2, impulse = "lm1s", response = "tb3m",  n.ahead = 12, ortho = F)
+irfr_m1s_gs10_r2 = irf(var_r2, impulse = "lm1s", response = "gs10",  n.ahead = 12, ortho = F)
+#Impulsos de dlgnp
+irfr_gnp_m1s_r2 = irf(var_r2, impulse = "lgnp", response = "lm1s",  n.ahead = 12, ortho = F)
+irfr_gnp_r2 = irf(var_r2, impulse = "lgnp", response = "lgnp",  n.ahead = 12, ortho = F)
+irfr_gnp_tb3m_r2 = irf(var_r2, impulse = "lgnp", response = "tb3m",  n.ahead = 12, ortho = F)
+irfr_gnp_gs10_r2 = irf(var_r2, impulse = "lgnp", response = "gs10",  n.ahead = 12, ortho = F)
+#Impulsos de dtb3m
+irfr_tb3m_m1s_r2 = irf(var_r2, impulse = "tb3m", response = "lm1s",  n.ahead = 12, ortho = F)
+irfr_tb3m_gnp_r2 = irf(var_r2, impulse = "tb3m", response = "lgnp",  n.ahead = 12, ortho = F)
+irfr_tb3m_r2 = irf(var_r2, impulse = "tb3m", response = "tb3m",  n.ahead = 12, ortho = F)
+irfr_tb3m_gs10_r2 = irf(var_r2, impulse = "tb3m", response = "gs10",  n.ahead = 12, ortho = F)
+#Impulsos de dgs10
+irfr_gs10_m1s_r2 = irf(var_r2, impulse = "gs10", response = "lm1s",  n.ahead = 12, ortho = F)
+irfr_gs10_gnp_r2 = irf(var_r2, impulse = "gs10", response = "lgnp",  n.ahead = 12, ortho = F)
+irfr_gs10_tb3m_r2 = irf(var_r2, impulse = "gs10", response = "tb3m",  n.ahead = 12, ortho = F)
+irfr_gs10_r2 = irf(var_r2, impulse = "gs10", response = "gs10",  n.ahead = 12, ortho = F)
+```
+
+Se mostrarán los gráficos en tandas de 4, cada tanda corresponde al impulso de una serie y la respuesta de ella misma y las otras tres.
+
+```{r}
+#Impulso desde m1s
+plot(irfr_m1s_r2)
+plot(irfr_m1s_gnp_r2)
+plot(irfr_m1s_tb3m_r2)
+plot(irfr_m1s_gs10_r2)
+```
+
+
+En los gráficos se observa como la respuesta a un impulso desde el stock del dinero es significativa para el propio stock del dinero y para el PIB, de forma positiva en el primer caso y negativa en el segundo.
+
+```{r}
+#Impulso desde PIB
+plot(irfr_gnp_m1s_r2)
+plot(irfr_gnp_r2)
+plot(irfr_gnp_tb3m_r2)
+plot(irfr_gnp_gs10_r2)
+```
+
+En el caso del impulso en el PIB la respuesta se ve reflejada en el propio PIB y en los primeros periodos de las tasas de interes a 3 meses y  10 años.
+
+```{r}
+#Impulso desde tb3m
+plot(irfr_tb3m_m1s_r2)
+plot(irfr_tb3m_gnp_r2)
+plot(irfr_tb3m_r2)
+plot(irfr_tb3m_gs10_r2)
+```
+
+En estos 4 gráficos se puede apreciar como en cada una de las series encontramos una respuesta significativa, surge desde 0 en todas las series excepto en el tipo de interes a tres meses (serie que genera el impulso).
+Y tarda bastante en desaparecer, 12 periodos o más en algunos casos.
+
+```{r}
+#Impulso desde gs10
+plot(irfr_gs10_m1s_r2)
+plot(irfr_gs10_gnp_r2)
+plot(irfr_gs10_tb3m_r2)
+plot(irfr_gs10_r2)
+```
+
+El último caso es un impulso generado en la tasa de interes a 10 años, no tiene una respuesta significativa excepto en si misma, que decrece hasta el periodo 7 y luego vuelve a crecer. Y en el PIB y la tasa de interes a 3 meses donde es a partir del periodo 8 cuando timidamente muestra una respuesta significativa.
