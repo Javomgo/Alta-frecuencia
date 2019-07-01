@@ -2,8 +2,8 @@
 library(tidyverse)
 
 #Se leen los datos y almacenan en dataframes.
-stock = read_tsv("Stock3.txt")
-stockNBBO = read_tsv("Stock3NBBO.txt")
+stock = read_tsv("Stock1.txt")
+stockNBBO = read_tsv("Stock1NBBO.txt")
 
 #Se crean las variables que serán necesarias en el algoritmo
 #coef_101 = matrix(nrow = 22, ncol = 5)
